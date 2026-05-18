@@ -1,25 +1,46 @@
-import pandas as pd 
+from pathlib import Path
+import pandas as pd
 import torch
-print(torch.__version__)
+from sklearn.feature_extraction.text import CountVectorizer
 
-from sklearn.feature_extraction.text import CountVectorizer 
-from sklearn.metrics.pairwise import cosine_similarity
+DATA_PATH = Path(__file__).parent.parent / "data" / "pubmed_results.csv"
+MAX_FEATURES = 1000
+TOP_N = 5
 
-df = pd.read_csv('data/pubmed_results.csv')
-abstracts = df['abstract'].fillna("").tolist()
 
-#Convert abstracts into count vectors with pytorch
-vectorizer = CountVectorizer(stop_words="english",max_features=1000)
+def build_similarity_matrix(abstracts: list[str]) -> torch.Tensor:
+    """Vectorize abstracts and compute a dot-product similarity matrix using torch."""
+    vectorizer = CountVectorizer(stop_words="english", max_features=MAX_FEATURES)
+    X = vectorizer.fit_transform(abstracts)
+    # Convert to float tensor: shape (num_papers, vocab_size)
+    X_tensor = torch.tensor(X.toarray(), dtype=torch.float32)
+    # Normalise rows so dot product equals cosine similarity
+    norms = X_tensor.norm(dim=1, keepdim=True).clamp(min=1e-8)
+    X_norm = X_tensor / norms
+    return X_norm @ X_norm.T  # shape (num_papers, num_papers)
 
-X = vectorizer.fit_transform(abstracts)
-X_tensor = torch.tensor(X.toarray(), dtype=torch.float32) 
 
-# Compute cosine similarity between abstracts
-cosine_sim = cosine_similarity(X_tensor)
+def find_similar_papers(similarity_matrix: torch.Tensor, paper_index: int, top_n: int = TOP_N) -> torch.Tensor:
+    """Return indices of the top_n most similar papers to paper_index (excluding itself)."""
+    similarities = similarity_matrix[paper_index]
+    # torch.argsort descending — no [::-1] needed (torch doesn't support negative steps)
+    sorted_indices = torch.argsort(similarities, descending=True)
+    return sorted_indices[1 : top_n + 1]  # skip index 0 (self)
 
-paper_index = 0
-similarities = cosine_sim[paper_index]
-similar_indices = similarities.argsort()[::-1][1:6]  # Get indices of top 5 similar papers (excluding itself)
-print(f"Top 5 papers similar to paper {paper_index} ({df['title'][paper_index]}):")
-for idx in similar_indices:
-    print(f"Paper {idx}: {df['title'][idx]} (Similarity: {similarities[idx]:.4f})") 
+
+def main() -> None:
+    df = pd.read_csv(DATA_PATH)
+    abstracts = df["abstract"].fillna("").tolist()
+
+    sim_matrix = build_similarity_matrix(abstracts)
+
+    paper_index = 0
+    similar_indices = find_similar_papers(sim_matrix, paper_index)
+
+    print(f"Top {TOP_N} papers similar to paper {paper_index} ({df['title'][paper_index]}):")
+    for idx in similar_indices.tolist():
+        print(f"  [{idx}] {df['title'][idx]} (similarity: {sim_matrix[paper_index][idx]:.4f})")
+
+
+if __name__ == "__main__":
+    main() 
