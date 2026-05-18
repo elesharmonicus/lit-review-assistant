@@ -12,16 +12,17 @@ if len(sys.argv) < 2:
     sys.exit(1)
 
 query = " ".join(sys.argv[1:])
-sort = "relevance" # relevance, pubdate, author, journal
 
-retnax = 20
+SORT_MODE = "relevance" # relevance, pubdate, author, journal
+MAX_RESULTS = 20
+
 results = []
 def search_pubmed(query):
-    url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={query}&sort={sort}&retmode=json"
+    url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={query}&sort={SORT_MODE}&retmode=json"
     response = requests.get(url)
     data = response.json()
     if 'esearchresult' in data and 'idlist' in data['esearchresult'] and len(data['esearchresult']['idlist']) > 0:
-        for pubmed_id in data['esearchresult']['idlist'][:retnax]:
+        for pubmed_id in data['esearchresult']['idlist'][:MAX_RESULTS]:
             url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={pubmed_id}&rettype=abstract&retmode=xml"
             response = requests.get(url)
             time.sleep(0.34)  # stay within NCBI's 3 requests/sec limit
@@ -45,24 +46,28 @@ def search_pubmed(query):
             authors = [author.findtext('LastName', '') + " " + author.findtext('ForeName', '') for author in root.findall('.//Author')]
             journal = root.findtext('.//Journal/Title', '')
             doi = root.findtext('.//ELocationID[@EIdType="doi"]', '')
-            results.append((pubmed_id, title, abstract, year, authors, journal, doi))
+            results.append({'pubmed_id': pubmed_id, 'title': title, 'abstract': abstract, 'year': year, 'authors': authors, 'journal': journal, 'doi': doi})
     return results
 
+def save_results(results):
+    df = pd.DataFrame(results, columns=['pubmed_id', 'title', 'abstract', 'year', 'authors', 'journal', 'doi'])
+    df.to_csv('data/pubmed_results.csv', index=False)
 
-result = search_pubmed(query)
-if result:
-    for pubmed_id, title, abstract, year, authors, journal, doi in result:
-        print(f"PubMed ID: {pubmed_id}")
-        print(f"Title: {title}")
-        print(f"Abstract: {abstract}")
-        print(f"Year: {year}")
-        print(f"Authors: {', '.join(authors)}")
-        print(f"Journal: {journal}")
-        print(f"DOI: {doi}")
+def print_results(results):
+    for result in results:
+        print(f"PubMed ID: {result['pubmed_id']}")
+        print(f"Title: {result['title']}")
+        print(f"Abstract: {result['abstract']}")
+        print(f"Year: {result['year']}")
+        print(f"Authors: {', '.join(result['authors'])}")
+        print(f"Journal: {result['journal']}")
+        print(f"DOI: {result['doi']}")
         print()
-else:
-    print("No results found.")
-    
-df = pd.DataFrame(result, columns=['pubmed_id', 'title', 'abstract', 'year', 'authors', 'journal', 'doi'])
-df.to_csv('data/pubmed_results.csv', index=False)
 
+def main():
+    results = search_pubmed(query)
+    save_results(results)
+    print_results(results)
+
+if __name__ == "__main__":
+    main()
