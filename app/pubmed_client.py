@@ -14,11 +14,11 @@ if len(sys.argv) < 2:
 query = " ".join(sys.argv[1:])
 
 SORT_MODE = "relevance" # relevance, pubdate, author, journal
-MAX_RESULTS = 20
+MAX_RESULTS = 100
 
 results = []
 def search_pubmed(query):
-    url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={query}&sort={SORT_MODE}&retmode=json"
+    url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={query}&sort={SORT_MODE}&retmax={MAX_RESULTS}&retmode=json"
     response = requests.get(url)
     data = response.json()
     if 'esearchresult' in data and 'idlist' in data['esearchresult'] and len(data['esearchresult']['idlist']) > 0:

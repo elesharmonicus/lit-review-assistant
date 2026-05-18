@@ -2,44 +2,12 @@
 from collections import Counter
 import re
 import pandas as pd
+import matplotlib.pyplot as plt
+import ast
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
-STOPWORDS = {
-    "the",
-    "and",
-    "of",
-    "in",
-    "to",
-    "with",
-    "and",
-    "for",
-    "on",
-    "is",
-    "that",
-    "as",
-    "are",
-    "by",
-    "was",
-    "be",
-    "this",
-    "which",
-    "or",
-    "from",
-    "at",
-    "it",
-    "an",
-    "we",
-    "can",
-    "not",
-    "have",
-    "has",
-    "but",
-    "all",
-    "they",
-    "their",
-    "may",
-    "a"
-}
-
+STOPWORDS = set(ENGLISH_STOP_WORDS)
+TOP_N = 20
 
 def clean_and_tokenize(text):
     """Convert text into filtered word tokens."""
@@ -59,15 +27,52 @@ def analyze_abstracts(abstracts):
     for abstract in abstracts:
         words = clean_and_tokenize(abstract)
         word_freq.update(words)
-    return Counter(word_freq).most_common(20)  # Return top 20 most common words
+    return Counter(word_freq).most_common(TOP_N)  # Return top N most common words
+
+
+def plot_publication_trends(df):
+    """Plot the number of publications per year."""
+    df['year'] = pd.to_numeric(df['year'], errors='coerce')
+    df = df.replace("", pd.NA)
+    df = df.dropna(subset=['year'])
+    yearly_counts = df['year'].value_counts().sort_index()
+    plt.figure(figsize=(10, 6))
+    plt.plot(yearly_counts.index, yearly_counts.values, marker='o')
+    plt.title('Number of Publications per Year')
+    plt.xlabel('Year')
+    plt.ylabel('Number of Publications')
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig("data/year_trends.png")
+    plt.close()
+
+
+def analyze_authors(df):
+    """Analyze authors to find the most prolific ones."""
+    author_freq = Counter()
+    for authors in df['authors'].dropna():
+        if isinstance(authors, str):
+            try:
+                authors_list = ast.literal_eval(authors)
+                author_freq.update(authors_list)
+            except (ValueError, SyntaxError):
+                continue
+    return author_freq.most_common(TOP_N)  # Return top N most prolific authors
 
 def main():
     df = pd.read_csv('data/pubmed_results.csv')
+    
     abstracts = df['abstract'].dropna().tolist()
     top_words = analyze_abstracts(abstracts)
-    print("Top 20 most common words in abstracts:")
+    print(f"Top {TOP_N} most common words in abstracts:")
     for word, freq in top_words:
         print(f"{word}: {freq}")
+
+    plot_publication_trends(df)
+    top_authors = analyze_authors(df)
+    print(f"\nTop {TOP_N} most prolific authors:")
+    for author, freq in top_authors:
+        print(f"{author}: {freq}")  
 
 if __name__ == "__main__":
     main()
