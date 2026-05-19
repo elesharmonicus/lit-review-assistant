@@ -34,7 +34,10 @@ def search_pubmed(query):
             except ET.ParseError as e:
                 print(f"Warning: XML parse error for ID {pubmed_id}: {e}, skipping.", file=sys.stderr)
                 continue
-            title = root.findtext('.//ArticleTitle', '')
+            title_parts = []
+            for el in root.findall('.//ArticleTitle'):
+                title_parts.append(''.join(el.itertext()).strip())
+            title = ' '.join(title_parts)
             abstract_parts = []
             for el in root.findall('.//AbstractText'):
                 label = el.get('Label')

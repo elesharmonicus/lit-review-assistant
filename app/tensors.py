@@ -1,7 +1,7 @@
 from pathlib import Path
 import pandas as pd
 import torch
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 DATA_PATH = Path(__file__).parent.parent / "data" / "pubmed_results.csv"
 MAX_FEATURES = 1000
@@ -10,7 +10,7 @@ TOP_N = 5
 
 def build_similarity_matrix(abstracts: list[str]) -> torch.Tensor:
     """Vectorize abstracts and compute a dot-product similarity matrix using torch."""
-    vectorizer = CountVectorizer(stop_words="english", max_features=MAX_FEATURES)
+    vectorizer = TfidfVectorizer(stop_words="english", max_features=MAX_FEATURES)
     X = vectorizer.fit_transform(abstracts)
     # Convert to float tensor: shape (num_papers, vocab_size)
     X_tensor = torch.tensor(X.toarray(), dtype=torch.float32)
@@ -34,7 +34,7 @@ def main() -> None:
 
     sim_matrix = build_similarity_matrix(abstracts)
 
-    paper_index = 0
+    paper_index = int(input("Enter paper index: "))
     similar_indices = find_similar_papers(sim_matrix, paper_index)
 
     print(f"Top {TOP_N} papers similar to paper {paper_index} ({df['title'][paper_index]}):")

@@ -1,23 +1,31 @@
 # Keyword frequency analysis of abstracts
 from collections import Counter
 import re
+import nltk
 import pandas as pd
 import matplotlib.pyplot as plt
 import ast
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+from nltk.stem import WordNetLemmatizer
 
-STOPWORDS = set(ENGLISH_STOP_WORDS)
+DOMAIN_STOPWORDS = {
+    "using", "used", "use", "based", "method", "methods",
+    "study", "studies", "result", "results", "data",
+    "high", "time", "new", "also", "may", "however"
+}
+STOPWORDS = set(ENGLISH_STOP_WORDS) | DOMAIN_STOPWORDS
 TOP_N = 20
 
 def clean_and_tokenize(text):
     """Convert text into filtered word tokens."""
 
-    words = re.findall(r"\b\w+\b", text.lower())
+    words = re.findall(r"\b\w+\b", re.sub(r"[^a-z\s]", ' ', text.lower()))
+    lemmatizer = WordNetLemmatizer()
 
     return [
-        word
+        lemmatizer.lemmatize(word)
         for word in words
-        if word not in STOPWORDS
+        if word not in STOPWORDS and len(word) > 2 and not word.isnumeric()
     ]
 
 
