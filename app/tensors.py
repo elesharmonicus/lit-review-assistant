@@ -28,11 +28,21 @@ def find_similar_papers(similarity_matrix: torch.Tensor, paper_index: int, top_n
     return sorted_indices[1 : top_n + 1]  # skip index 0 (self)
 
 
+def print_paper_titles(titles: list[str], query: str) -> None:
+    """Print paper titles with indices, highlighting those that match the query."""
+    print("Papers:")
+    for i, title in enumerate(titles):
+        if query.lower() in title.lower():
+            print(f"  [{i}] {title}")
+
 def main(input_file: str, query: str) -> None:
     df = pd.read_csv(input_file)
     abstracts = df["abstract"].fillna("").tolist()
+    titles = df["title"].fillna("").tolist()
 
     sim_matrix = build_similarity_matrix(abstracts)
+
+    print_paper_titles(titles, query)
 
     paper_index = int(input("Enter paper index: "))
     similar_indices = find_similar_papers(sim_matrix, paper_index)

@@ -11,9 +11,9 @@ def search_pubmed(query, max_results, sort_mode):
     url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={query}&sort={sort_mode}&retmax={max_results}&retmode=json"
     response = requests.get(url)
     data = response.json()
-    print(f"Fetching {pubmed_id}...")
     if 'esearchresult' in data and 'idlist' in data['esearchresult'] and len(data['esearchresult']['idlist']) > 0:
         for pubmed_id in data['esearchresult']['idlist'][:max_results]:
+            print(f"Fetching {pubmed_id}...")
             url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={pubmed_id}&rettype=abstract&retmode=xml"
             response = requests.get(url)
             time.sleep(0.34)  # stay within NCBI's 3 requests/sec limit
@@ -43,9 +43,9 @@ def search_pubmed(query, max_results, sort_mode):
             results.append({'pubmed_id': pubmed_id, 'title': title, 'abstract': abstract, 'year': year, 'authors': authors, 'journal': journal, 'doi': doi})
     return results
 
-def save_results(results):
+def save_results(results, directory):
     df = pd.DataFrame(results, columns=['pubmed_id', 'title', 'abstract', 'year', 'authors', 'journal', 'doi'])
-    df.to_csv('data/pubmed_results.csv', index=False)
+    df.to_csv(directory, index=False)
 
 def print_results(results):
     for result in results:
@@ -58,7 +58,7 @@ def print_results(results):
         print(f"DOI: {result['doi']}")
         print()
 
-def main(query, max_results, sort_mode):
+def main(query, max_results, sort_mode, directory):
     results = search_pubmed(query, max_results, sort_mode)
     print_results(results[0:5])  # print first 5 results
-    save_results(results)
+    save_results(results, directory)
