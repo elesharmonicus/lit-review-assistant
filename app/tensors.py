@@ -28,8 +28,8 @@ def find_similar_papers(similarity_matrix: torch.Tensor, paper_index: int, top_n
     return sorted_indices[1 : top_n + 1]  # skip index 0 (self)
 
 
-def main() -> None:
-    df = pd.read_csv(DATA_PATH)
+def main(input_file: str, query: str) -> None:
+    df = pd.read_csv(input_file)
     abstracts = df["abstract"].fillna("").tolist()
 
     sim_matrix = build_similarity_matrix(abstracts)
@@ -41,6 +41,3 @@ def main() -> None:
     for idx in similar_indices.tolist():
         print(f"  [{idx}] {df['title'][idx]} (similarity: {sim_matrix[paper_index][idx]:.4f})")
 
-
-if __name__ == "__main__":
-    main() 

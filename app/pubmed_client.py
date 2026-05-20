@@ -2,27 +2,18 @@
 # Return the first PubMed ID, title and abstract of the first result
 import requests
 import xml.etree.ElementTree as ET
-import pandas as pd
 import time
-
-# Read search query from command line arguments
 import sys
-if len(sys.argv) < 2:
-    print("Usage: python pubmed.py <search query>")
-    sys.exit(1)
+import pandas as pd
 
-query = " ".join(sys.argv[1:])
-
-SORT_MODE = "relevance" # relevance, pubdate, author, journal
-MAX_RESULTS = 100
-
-results = []
-def search_pubmed(query):
-    url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={query}&sort={SORT_MODE}&retmax={MAX_RESULTS}&retmode=json"
+def search_pubmed(query, max_results, sort_mode):
+    results = []
+    url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={query}&sort={sort_mode}&retmax={max_results}&retmode=json"
     response = requests.get(url)
     data = response.json()
+    print(f"Fetching {pubmed_id}...")
     if 'esearchresult' in data and 'idlist' in data['esearchresult'] and len(data['esearchresult']['idlist']) > 0:
-        for pubmed_id in data['esearchresult']['idlist'][:MAX_RESULTS]:
+        for pubmed_id in data['esearchresult']['idlist'][:max_results]:
             url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={pubmed_id}&rettype=abstract&retmode=xml"
             response = requests.get(url)
             time.sleep(0.34)  # stay within NCBI's 3 requests/sec limit
@@ -67,10 +58,7 @@ def print_results(results):
         print(f"DOI: {result['doi']}")
         print()
 
-def main():
-    results = search_pubmed(query)
+def main(query, max_results, sort_mode):
+    results = search_pubmed(query, max_results, sort_mode)
+    print_results(results[0:5])  # print first 5 results
     save_results(results)
-    print_results(results)
-
-if __name__ == "__main__":
-    main()

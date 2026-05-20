@@ -8,6 +8,8 @@ import ast
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 from nltk.stem import WordNetLemmatizer
 
+nltk.download('wordnet', quiet=True)
+
 DOMAIN_STOPWORDS = {
     "using", "used", "use", "based", "method", "methods",
     "study", "studies", "result", "results", "data",
@@ -15,12 +17,12 @@ DOMAIN_STOPWORDS = {
 }
 STOPWORDS = set(ENGLISH_STOP_WORDS) | DOMAIN_STOPWORDS
 TOP_N = 20
+lemmatizer = WordNetLemmatizer()
 
 def clean_and_tokenize(text):
     """Convert text into filtered word tokens."""
 
     words = re.findall(r"\b\w+\b", re.sub(r"[^a-z\s]", ' ', text.lower()))
-    lemmatizer = WordNetLemmatizer()
 
     return [
         lemmatizer.lemmatize(word)
@@ -35,7 +37,7 @@ def analyze_abstracts(abstracts):
     for abstract in abstracts:
         words = clean_and_tokenize(abstract)
         word_freq.update(words)
-    return Counter(word_freq).most_common(TOP_N)  # Return top N most common words
+    return word_freq.most_common(TOP_N)  # Return top N most common words
 
 
 def plot_publication_trends(df):
@@ -67,8 +69,8 @@ def analyze_authors(df):
                 continue
     return author_freq.most_common(TOP_N)  # Return top N most prolific authors
 
-def main():
-    df = pd.read_csv('data/pubmed_results.csv')
+def main(input_file):
+    df = pd.read_csv(input_file)
     
     abstracts = df['abstract'].dropna().tolist()
     top_words = analyze_abstracts(abstracts)
@@ -81,6 +83,3 @@ def main():
     print(f"\nTop {TOP_N} most prolific authors:")
     for author, freq in top_authors:
         print(f"{author}: {freq}")  
-
-if __name__ == "__main__":
-    main()
