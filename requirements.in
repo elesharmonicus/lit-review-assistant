@@ -1,0 +1,12 @@
+# Direct dependencies only — run pip-compile to regenerate requirements.txt
+matplotlib
+nltk
+numpy
+pandas
+requests
+scikit-learn
+scipy
+sentence-transformers
+tabulate
+torch
+ipykernel
