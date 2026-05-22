@@ -5,18 +5,27 @@ import xml.etree.ElementTree as ET
 import time
 import sys
 import pandas as pd
+from src.constants import PUBMED_BASE_URL, RATE_LIMIT_SLEEP
 
 def search_pubmed(query, max_results, sort_mode):
     results = []
-    url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={query}&sort={sort_mode}&retmax={max_results}&retmode=json"
-    response = requests.get(url)
+    url = f"{PUBMED_BASE_URL}/esearch.fcgi?db=pubmed&term={query}&sort={sort_mode}&retmax={max_results}&retmode=json"
+    try:
+        response = requests.get(url)
+    except requests.RequestException as e:
+        print(f"Error: request error during PubMed search: {e}", file=sys.stderr)
+        return results
     data = response.json()
     if 'esearchresult' in data and 'idlist' in data['esearchresult'] and len(data['esearchresult']['idlist']) > 0:
         for pubmed_id in data['esearchresult']['idlist'][:max_results]:
             print(f"Fetching {pubmed_id}...")
-            url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={pubmed_id}&rettype=abstract&retmode=xml"
-            response = requests.get(url)
-            time.sleep(0.34)  # stay within NCBI's 3 requests/sec limit
+            url = f"{PUBMED_BASE_URL}/efetch.fcgi?db=pubmed&id={pubmed_id}&rettype=abstract&retmode=xml"
+            try:
+                response = requests.get(url)
+            except requests.RequestException as e:
+                print(f"Warning: request error for ID {pubmed_id}: {e}, skipping.", file=sys.stderr)
+                continue
+            time.sleep(RATE_LIMIT_SLEEP)  # stay within NCBI's 3 requests/sec limit
             if not response.content.strip().startswith(b'<'):
                 print(f"Warning: unexpected response for ID {pubmed_id}, skipping.", file=sys.stderr)
                 continue

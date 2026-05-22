@@ -2,23 +2,31 @@ from pathlib import Path
 import pandas as pd
 import torch
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sentence_transformers import SentenceTransformer
+from src.constants import DEFAULT_EMBEDDING_MODEL, DEFAULT_MAX_FEATURES
+from src.config import DATA_DIR
 
-DATA_PATH = Path(__file__).parent.parent / "data" / "pubmed_results.csv"
-MAX_FEATURES = 1000
+DATA_PATH = DATA_DIR / "pubmed_results.csv"
 TOP_N = 5
 
 
 def build_similarity_matrix(abstracts: list[str]) -> torch.Tensor:
     """Vectorize abstracts and compute a dot-product similarity matrix using torch."""
-    vectorizer = TfidfVectorizer(stop_words="english", max_features=MAX_FEATURES)
+    vectorizer = TfidfVectorizer(stop_words="english", max_features=DEFAULT_MAX_FEATURES, norm='l2')
     X = vectorizer.fit_transform(abstracts)
     # Convert to float tensor: shape (num_papers, vocab_size)
     X_tensor = torch.tensor(X.toarray(), dtype=torch.float32)
-    # Normalise rows so dot product equals cosine similarity
-    norms = X_tensor.norm(dim=1, keepdim=True).clamp(min=1e-8)
-    X_norm = X_tensor / norms
-    return X_norm @ X_norm.T  # shape (num_papers, num_papers)
+    return X_tensor @ X_tensor.T  # shape (num_papers, num_papers)
 
+
+def build_embedding_similarity_matrix(abstracts: list[str]) -> torch.Tensor:
+    """Compute similarity matrix from SentenceTransformer embeddings."""
+    model = SentenceTransformer(DEFAULT_EMBEDDING_MODEL)
+    emb = torch.tensor(model.encode(abstracts))
+    norms = emb.norm(dim=1, keepdim=True).clamp(min=1e-8)
+    emb_norm = emb / norms
+    emb_sim = emb_norm @ emb_norm.T
+    return emb_sim
 
 def find_similar_papers(similarity_matrix: torch.Tensor, paper_index: int, top_n: int = TOP_N) -> torch.Tensor:
     """Return indices of the top_n most similar papers to paper_index (excluding itself)."""
@@ -40,7 +48,7 @@ def main(input_file: str, query: str) -> None:
     abstracts = df["abstract"].fillna("").tolist()
     titles = df["title"].fillna("").tolist()
 
-    sim_matrix = build_similarity_matrix(abstracts)
+    sim_matrix = build_embedding_similarity_matrix(abstracts)
 
     print_paper_titles(titles, query)
 

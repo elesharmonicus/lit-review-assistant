@@ -1,9 +1,9 @@
 import argparse
 
-from pubmed_client import main as fetch_main
-from analysis import main as analyze_main
-from tensors import main as tensors_main
-from export import main as export_main
+from src.pubmed_client import main as fetch_main
+from src.analysis import main as analyze_main
+from src.embeddings import main as tensors_main
+from src.export import main as export_main
 
 def main():
     parser = argparse.ArgumentParser(description="Lit review assistant")

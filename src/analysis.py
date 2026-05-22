@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import ast
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 from nltk.stem import WordNetLemmatizer
+from src.config import DATA_DIR
 
 nltk.download('wordnet', quiet=True)
 
@@ -53,7 +54,7 @@ def plot_publication_trends(df):
     plt.ylabel('Number of Publications')
     plt.grid()
     plt.tight_layout()
-    plt.savefig("data/year_trends.png")
+    plt.savefig(DATA_DIR / "year_trends.png")
     plt.close()
 
 
