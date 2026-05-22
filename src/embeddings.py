@@ -3,16 +3,17 @@ import pandas as pd
 import torch
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sentence_transformers import SentenceTransformer
-from src.constants import DEFAULT_EMBEDDING_MODEL, DEFAULT_MAX_FEATURES
+from src.config import load_config
 from src.config import DATA_DIR
 
 DATA_PATH = DATA_DIR / "pubmed_results.csv"
 TOP_N = 5
 
-
 def build_similarity_matrix(abstracts: list[str]) -> torch.Tensor:
     """Vectorize abstracts and compute a dot-product similarity matrix using torch."""
-    vectorizer = TfidfVectorizer(stop_words="english", max_features=DEFAULT_MAX_FEATURES, norm='l2')
+    config = load_config()
+    max_features = config.get('embeddings', {}).get('max_features', 1000)
+    vectorizer = TfidfVectorizer(stop_words="english", max_features=max_features, norm='l2')
     X = vectorizer.fit_transform(abstracts)
     # Convert to float tensor: shape (num_papers, vocab_size)
     X_tensor = torch.tensor(X.toarray(), dtype=torch.float32)
@@ -21,7 +22,9 @@ def build_similarity_matrix(abstracts: list[str]) -> torch.Tensor:
 
 def build_embedding_similarity_matrix(abstracts: list[str]) -> torch.Tensor:
     """Compute similarity matrix from SentenceTransformer embeddings."""
-    model = SentenceTransformer(DEFAULT_EMBEDDING_MODEL)
+    config = load_config()
+    model_name = config.get('embeddings', {}).get('model', 'all-MiniLM-L6-v2')
+    model = SentenceTransformer(model_name)
     emb = torch.tensor(model.encode(abstracts))
     norms = emb.norm(dim=1, keepdim=True).clamp(min=1e-8)
     emb_norm = emb / norms

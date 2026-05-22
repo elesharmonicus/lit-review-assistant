@@ -1,0 +1,10 @@
+[pubmed]
+max_results = 100
+sort_mode = "relevance"
+
+[paths]
+output_file = "data/pubmed_results.csv"
+
+[embeddings]
+model = "all-MiniLM-L6-v2"
+max_features = 1000
