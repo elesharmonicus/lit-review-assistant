@@ -1,11 +1,13 @@
 import argparse
 
+from src.utils import setup_logging
 from src.pubmed_client import main as fetch_main
 from src.analysis import main as analyze_main
 from src.embeddings import main as tensors_main
 from src.export import main as export_main
 
 def main():
+    setup_logging()
     parser = argparse.ArgumentParser(description="Lit review assistant")
     subparsers = parser.add_subparsers(dest='command')
     fetch_parser = subparsers.add_parser('fetch')

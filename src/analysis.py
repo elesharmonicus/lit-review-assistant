@@ -8,6 +8,9 @@ import ast
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 from nltk.stem import WordNetLemmatizer
 from src.config import DATA_DIR
+import logging
+
+logger = logging.getLogger(__name__)
 
 nltk.download('wordnet', quiet=True)
 
@@ -72,7 +75,7 @@ def analyze_authors(df):
 
 def main(input_file):
     df = pd.read_csv(input_file)
-    
+    logger.info(f"Loaded data from {input_file}")
     abstracts = df['abstract'].dropna().tolist()
     top_words = analyze_abstracts(abstracts)
     print(f"Top {TOP_N} most common words in abstracts:")

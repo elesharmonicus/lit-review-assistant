@@ -1,9 +1,11 @@
 import pandas as pd
 from src.config import DATA_DIR
+import logging
+logger = logging.getLogger(__name__)
 
 def main(input_file, export_format):
     # Placeholder for export functionality
-    print(f"Exporting results from {input_file} in {export_format} format...")
+    logger.info(f"Exporting results from {input_file} in {export_format} format...")
     df = pd.read_csv(input_file)
     if export_format == 'csv':
         df.to_csv(DATA_DIR / "exported_results.csv", index=False)

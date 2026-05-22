@@ -3,9 +3,11 @@
 import requests
 import xml.etree.ElementTree as ET
 import time
-import sys
 import pandas as pd
+import logging
 from src.constants import PUBMED_BASE_URL, RATE_LIMIT_SLEEP
+
+logger = logging.getLogger(__name__)
 
 def search_pubmed(query, max_results, sort_mode):
     results = []
@@ -13,26 +15,26 @@ def search_pubmed(query, max_results, sort_mode):
     try:
         response = requests.get(url)
     except requests.RequestException as e:
-        print(f"Error: request error during PubMed search: {e}", file=sys.stderr)
+        logger.warning(f"Request error during PubMed search: {e}")
         return results
     data = response.json()
     if 'esearchresult' in data and 'idlist' in data['esearchresult'] and len(data['esearchresult']['idlist']) > 0:
         for pubmed_id in data['esearchresult']['idlist'][:max_results]:
-            print(f"Fetching {pubmed_id}...")
+            logger.info(f"Fetching {pubmed_id}...")
             url = f"{PUBMED_BASE_URL}/efetch.fcgi?db=pubmed&id={pubmed_id}&rettype=abstract&retmode=xml"
             try:
                 response = requests.get(url)
             except requests.RequestException as e:
-                print(f"Warning: request error for ID {pubmed_id}: {e}, skipping.", file=sys.stderr)
+                logger.warning(f"Request error for ID {pubmed_id}: {e}, skipping.")
                 continue
             time.sleep(RATE_LIMIT_SLEEP)  # stay within NCBI's 3 requests/sec limit
             if not response.content.strip().startswith(b'<'):
-                print(f"Warning: unexpected response for ID {pubmed_id}, skipping.", file=sys.stderr)
+                logger.warning(f"Unexpected response for ID {pubmed_id}, skipping.")
                 continue
             try:
                 root = ET.fromstring(response.content)
             except ET.ParseError as e:
-                print(f"Warning: XML parse error for ID {pubmed_id}: {e}, skipping.", file=sys.stderr)
+                logger.warning(f"XML parse error for ID {pubmed_id}: {e}, skipping.")
                 continue
             title_parts = []
             for el in root.findall('.//ArticleTitle'):
