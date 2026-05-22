@@ -9,7 +9,8 @@ from src.constants import PUBMED_BASE_URL, RATE_LIMIT_SLEEP
 
 logger = logging.getLogger(__name__)
 
-def search_pubmed(query, max_results, sort_mode):
+def search_pubmed(query: str, max_results: int, sort_mode: str) -> list[dict]:
+    """Search PubMed for a query term and return a list of results with PubMed ID, title, abstract, year, authors, journal, and DOI."""
     results = []
     url = f"{PUBMED_BASE_URL}/esearch.fcgi?db=pubmed&term={query}&sort={sort_mode}&retmax={max_results}&retmode=json"
     try:
@@ -54,11 +55,13 @@ def search_pubmed(query, max_results, sort_mode):
             results.append({'pubmed_id': pubmed_id, 'title': title, 'abstract': abstract, 'year': year, 'authors': authors, 'journal': journal, 'doi': doi})
     return results
 
-def save_results(results, directory):
+def save_results(results: list[dict], directory: str) -> None:
+    """Save results to a CSV file."""
     df = pd.DataFrame(results, columns=['pubmed_id', 'title', 'abstract', 'year', 'authors', 'journal', 'doi'])
     df.to_csv(directory, index=False)
 
-def print_results(results):
+def print_results(results: list[dict]) -> None:
+    """Print results to the console."""
     for result in results:
         print(f"PubMed ID: {result['pubmed_id']}")
         print(f"Title: {result['title']}")
@@ -69,7 +72,8 @@ def print_results(results):
         print(f"DOI: {result['doi']}")
         print()
 
-def main(query, max_results, sort_mode, directory):
+def main(query: str, max_results: int, sort_mode: str, directory: str) -> None:
+    """Run the PubMed search and save results."""
     results = search_pubmed(query, max_results, sort_mode)
     print_results(results[0:5])  # print first 5 results
     save_results(results, directory)

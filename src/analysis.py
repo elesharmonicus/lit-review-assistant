@@ -23,7 +23,7 @@ STOPWORDS = set(ENGLISH_STOP_WORDS) | DOMAIN_STOPWORDS
 TOP_N = 20
 lemmatizer = WordNetLemmatizer()
 
-def clean_and_tokenize(text):
+def clean_and_tokenize(text: str) -> list[str]:
     """Convert text into filtered word tokens."""
 
     words = re.findall(r"\b\w+\b", re.sub(r"[^a-z\s]", ' ', text.lower()))
@@ -35,7 +35,7 @@ def clean_and_tokenize(text):
     ]
 
 
-def analyze_abstracts(abstracts):
+def analyze_abstracts(abstracts: list[str]) -> list[tuple[str, int]]:
     """Analyze abstracts to find the most common keywords."""
     word_freq = Counter()
     for abstract in abstracts:
@@ -44,7 +44,7 @@ def analyze_abstracts(abstracts):
     return word_freq.most_common(TOP_N)  # Return top N most common words
 
 
-def plot_publication_trends(df):
+def plot_publication_trends(df: pd.DataFrame) -> None:
     """Plot the number of publications per year."""
     df['year'] = pd.to_numeric(df['year'], errors='coerce')
     df = df.replace("", pd.NA)
@@ -61,7 +61,7 @@ def plot_publication_trends(df):
     plt.close()
 
 
-def analyze_authors(df):
+def analyze_authors(df: pd.DataFrame) -> list[tuple[str, int]]:
     """Analyze authors to find the most prolific ones."""
     author_freq = Counter()
     for authors in df['authors'].dropna():
@@ -73,7 +73,8 @@ def analyze_authors(df):
                 continue
     return author_freq.most_common(TOP_N)  # Return top N most prolific authors
 
-def main(input_file):
+def main(input_file: str) -> None:
+    """Run the analysis on the abstracts and authors."""
     df = pd.read_csv(input_file)
     logger.info(f"Loaded data from {input_file}")
     abstracts = df['abstract'].dropna().tolist()

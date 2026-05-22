@@ -3,17 +3,17 @@ import pandas as pd
 import torch
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sentence_transformers import SentenceTransformer
-from src.config import load_config
-from src.config import DATA_DIR
+from src.config import load_config, DATA_DIR
 
+_config = load_config()
+MAX_FEATURES = _config.get('embeddings', {}).get('max_features', 1000)
+MODEL_NAME = _config.get('embeddings', {}).get('model', 'all-MiniLM-L6-v2')
 DATA_PATH = DATA_DIR / "pubmed_results.csv"
 TOP_N = 5
 
 def build_similarity_matrix(abstracts: list[str]) -> torch.Tensor:
     """Vectorize abstracts and compute a dot-product similarity matrix using torch."""
-    config = load_config()
-    max_features = config.get('embeddings', {}).get('max_features', 1000)
-    vectorizer = TfidfVectorizer(stop_words="english", max_features=max_features, norm='l2')
+    vectorizer = TfidfVectorizer(stop_words="english", max_features=MAX_FEATURES, norm='l2')
     X = vectorizer.fit_transform(abstracts)
     # Convert to float tensor: shape (num_papers, vocab_size)
     X_tensor = torch.tensor(X.toarray(), dtype=torch.float32)
@@ -22,9 +22,8 @@ def build_similarity_matrix(abstracts: list[str]) -> torch.Tensor:
 
 def build_embedding_similarity_matrix(abstracts: list[str]) -> torch.Tensor:
     """Compute similarity matrix from SentenceTransformer embeddings."""
-    config = load_config()
-    model_name = config.get('embeddings', {}).get('model', 'all-MiniLM-L6-v2')
-    model = SentenceTransformer(model_name)
+    model_name = MODEL_NAME
+    model = SentenceTransformer(model_name) 
     emb = torch.tensor(model.encode(abstracts))
     norms = emb.norm(dim=1, keepdim=True).clamp(min=1e-8)
     emb_norm = emb / norms
@@ -47,6 +46,7 @@ def print_paper_titles(titles: list[str], query: str) -> None:
             print(f"  [{i}] {title}")
 
 def main(input_file: str, query: str) -> None:
+    """Run the similarity search for the given query."""
     df = pd.read_csv(input_file)
     abstracts = df["abstract"].fillna("").tolist()
     titles = df["title"].fillna("").tolist()

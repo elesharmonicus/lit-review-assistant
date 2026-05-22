@@ -3,7 +3,8 @@ from src.config import DATA_DIR
 import logging
 logger = logging.getLogger(__name__)
 
-def main(input_file, export_format):
+def main(input_file: str, export_format: str) -> None:
+    """Export the results in the specified format."""
     # Placeholder for export functionality
     logger.info(f"Exporting results from {input_file} in {export_format} format...")
     df = pd.read_csv(input_file)
