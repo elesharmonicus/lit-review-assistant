@@ -10,3 +10,4 @@ sentence-transformers
 tabulate
 torch
 ipykernel
+pytest
