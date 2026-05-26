@@ -7,7 +7,7 @@ from src.config import load_config
 from src.fetch.pubmed_client import main as fetch_main
 from src.fetch.bib_ingest import main as ingest_main
 from src.analysis import main as analyze_main
-from src.embeddings import main as tensors_main
+from src.embeddings import show_candidates, show_similar_papers
 from src.export import main as export_main
 
 def main():
@@ -29,6 +29,7 @@ def main():
     export_parser = subparsers.add_parser('export')
     export_parser.add_argument('--format', choices=['csv', 'json', 'markdown'], default='csv', help="Export format")
     export_parser.add_argument('--input', default=config.get('paths', {}).get('output_file', 'data/pubmed_results.csv'), help="CSV file with PubMed results to export")
+    export_parser.add_argument('--output', help="Output file for exported results (optional, defaults to data/exported_results.{format})")
     ingest_parser = subparsers.add_parser('ingest')
     ingest_parser.add_argument('--bib', required=True, help="Path to BibTeX file to ingest")
     ingest_parser.add_argument('--output', default=config.get('paths', {}).get('output_file', 'data/my_papers.csv'), help="Output CSV file for ingested results")
@@ -40,12 +41,16 @@ def main():
     elif args.command == 'analyze':
         analyze_main(args.input)
     elif args.command == 'similar':
-        tensors_main(args.input, args.query)
+        sim_matrix, df = show_candidates(args.input, args.query)
+        paper_index = int(input("Enter paper index: "))
+        show_similar_papers(paper_index, sim_matrix, df)
     elif args.command == 'export':
-        export_main(args.input, args.format)
+        output_file = args.output or f"data/exported_results.{args.format}"
+        export_main(args.input, args.format, output_file)
     elif args.command == 'ingest':
         ingest_main(args.bib, args.output)
-    else: parser.print_help()
+    else: 
+        parser.print_help()
 
 if __name__ == "__main__":
     main()

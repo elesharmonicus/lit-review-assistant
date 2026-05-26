@@ -16,26 +16,26 @@ def search_pubmed(query: str, max_results: int, sort_mode: str) -> list[dict]:
     try:
         response = requests.get(url)
     except requests.RequestException as e:
-        logger.warning(f"Request error during PubMed search: {e}")
+        logger.warning("Request error during PubMed search: %s", e)
         return results
     data = response.json()
     if 'esearchresult' in data and 'idlist' in data['esearchresult'] and len(data['esearchresult']['idlist']) > 0:
         for pubmed_id in data['esearchresult']['idlist'][:max_results]:
-            logger.info(f"Fetching {pubmed_id}...")
+            logger.info("Fetching %s...", pubmed_id)
             url = f"{PUBMED_BASE_URL}/efetch.fcgi?db=pubmed&id={pubmed_id}&rettype=abstract&retmode=xml"
             try:
                 response = requests.get(url)
             except requests.RequestException as e:
-                logger.warning(f"Request error for ID {pubmed_id}: {e}, skipping.")
+                logger.warning("Request error for ID %s: %s, skipping.", pubmed_id, e)
                 continue
             time.sleep(RATE_LIMIT_SLEEP)  # stay within NCBI's 3 requests/sec limit
             if not response.content.strip().startswith(b'<'):
-                logger.warning(f"Unexpected response for ID {pubmed_id}, skipping.")
+                logger.warning("Unexpected response for ID %s, skipping.", pubmed_id)
                 continue
             try:
                 root = ET.fromstring(response.content)
             except ET.ParseError as e:
-                logger.warning(f"XML parse error for ID {pubmed_id}: {e}, skipping.")
+                logger.warning("XML parse error for ID %s: %s, skipping.", pubmed_id, e)
                 continue
             title_parts = []
             for el in root.findall('.//ArticleTitle'):

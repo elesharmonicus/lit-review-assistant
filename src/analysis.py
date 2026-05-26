@@ -76,7 +76,7 @@ def analyze_authors(df: pd.DataFrame) -> list[tuple[str, int]]:
 def main(input_file: str) -> None:
     """Run the analysis on the abstracts and authors."""
     df = pd.read_csv(input_file)
-    logger.info(f"Loaded data from {input_file}")
+    logger.info("Loaded data from %s", input_file)
     abstracts = df['abstract'].dropna().tolist()
     top_words = analyze_abstracts(abstracts)
     print(f"Top {TOP_N} most common words in abstracts:")
