@@ -1,6 +1,6 @@
 import pandas as pd
 import tempfile, os
-from src.pubmed_client import save_results
+from src.fetch.pubmed_client import save_results
 
 def test_save_results_creates_csv():
     data = [{"pubmed_id": "123", "title": "Test", "abstract": "x",

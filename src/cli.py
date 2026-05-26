@@ -2,7 +2,8 @@ import argparse
 
 from src.utils import setup_logging
 from src.config import load_config
-from src.pubmed_client import main as fetch_main
+from src.fetch.pubmed_client import main as fetch_main
+from src.fetch.bib_ingest import main as ingest_main
 from src.analysis import main as analyze_main
 from src.embeddings import main as tensors_main
 from src.export import main as export_main
@@ -25,6 +26,9 @@ def main():
     export_parser = subparsers.add_parser('export')
     export_parser.add_argument('--format', choices=['csv', 'json', 'markdown'], default='csv', help="Export format")
     export_parser.add_argument('--input', default=config.get('paths', {}).get('output_file', 'data/pubmed_results.csv'), help="CSV file with PubMed results to export")
+    ingest_parser = subparsers.add_parser('ingest')
+    ingest_parser.add_argument('--bib', required=True, help="Path to BibTeX file to ingest")
+    ingest_parser.add_argument('--output', default=config.get('paths', {}).get('output_file', 'data/my_papers.csv'), help="Output CSV file for ingested results")
     args = parser.parse_args()
     print("Literature AI Assistant")
     if args.command == 'fetch':
@@ -36,6 +40,8 @@ def main():
         tensors_main(args.input, args.query)
     elif args.command == 'export':
         export_main(args.input, args.format)
+    elif args.command == 'ingest':
+        ingest_main(args.bib, args.output)
     else: parser.print_help()
 
 if __name__ == "__main__":
