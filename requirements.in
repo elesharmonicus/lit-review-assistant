@@ -12,3 +12,4 @@ torch
 ipykernel
 pytest
 bibtexparser
+python-dotenv

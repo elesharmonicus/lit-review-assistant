@@ -1,5 +1,7 @@
 import argparse
 
+from dotenv import load_dotenv
+
 from src.utils import setup_logging
 from src.config import load_config
 from src.fetch.pubmed_client import main as fetch_main
@@ -9,6 +11,7 @@ from src.embeddings import main as tensors_main
 from src.export import main as export_main
 
 def main():
+    load_dotenv()
     setup_logging()
     config = load_config()
     parser = argparse.ArgumentParser(description="Lit review assistant")
