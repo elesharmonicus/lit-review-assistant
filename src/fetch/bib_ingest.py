@@ -3,6 +3,7 @@ import pandas as pd
 from bibtexparser.bparser import BibTexParser
 from bibtexparser.customization import convert_to_unicode
 from src.fetch.crossref_client import fetch_abstract_crossref, fetch_abstract_by_title
+from src.models import Paper
 import logging
 logger = logging.getLogger(__name__)
 
@@ -11,8 +12,8 @@ def _short(title: str, n: int = 55) -> str:
     return title if len(title) <= n else title[:n].rstrip() + "…"
 
 
-def load_bib(bib_file: str) -> list[dict]:
-    """Parse a .bib file and return a list of normalised paper dicts.
+def load_bib(bib_file: str) -> list[Paper]:
+    """Parse a .bib file and return a list of normalised Paper objects.
 
     For entries without an abstract, attempts to fetch one from CrossRef
     using the DOI (preferred) or title search (fallback).
@@ -47,8 +48,8 @@ def load_bib(bib_file: str) -> list[dict]:
                 fetched += 1
             else:
                 missing.append(paper["title"])
-
-        papers.append(paper)
+    
+        papers.append(Paper.from_dict(paper))
 
     logger.info("Abstract fetch complete — %d fetched, %d missing", fetched, len(missing))
     for t in missing:
@@ -60,5 +61,5 @@ def load_bib(bib_file: str) -> list[dict]:
 def main(bib_path: str, output_file: str) -> None:
     """Load .bib file and save as CSV."""
     papers = load_bib(bib_path)
-    df = pd.DataFrame(papers, columns=['title', 'abstract', 'authors', 'year', 'journal', 'doi'])
+    df = pd.DataFrame([paper.__dict__ for paper in papers], columns=['title', 'abstract', 'authors', 'year', 'journal', 'doi'])
     df.to_csv(output_file, index=False)

@@ -6,10 +6,11 @@ import time
 import pandas as pd
 import logging
 from src.constants import PUBMED_BASE_URL, RATE_LIMIT_SLEEP
+from src.models import Paper
 
 logger = logging.getLogger(__name__)
 
-def search_pubmed(query: str, max_results: int, sort_mode: str) -> list[dict]:
+def search_pubmed(query: str, max_results: int, sort_mode: str) -> list[Paper]:
     """Search PubMed for a query term and return a list of results with PubMed ID, title, abstract, year, authors, journal, and DOI."""
     results = []
     url = f"{PUBMED_BASE_URL}/esearch.fcgi?db=pubmed&term={query}&sort={sort_mode}&retmax={max_results}&retmode=json"
@@ -48,28 +49,28 @@ def search_pubmed(query: str, max_results: int, sort_mode: str) -> list[dict]:
                 if text:
                     abstract_parts.append(f"{label}: {text}" if label else text)
             abstract = ' '.join(abstract_parts)
-            year = root.findtext('.//PubDate/Year', '')
+            year_text = root.findtext('.//PubDate/Year', '')
+            year = int(year_text) if year_text.isdigit() else None
             authors = [author.findtext('LastName', '') + " " + author.findtext('ForeName', '') for author in root.findall('.//Author')]
             journal = root.findtext('.//Journal/Title', '')
             doi = root.findtext('.//ELocationID[@EIdType="doi"]', '')
-            results.append({'pubmed_id': pubmed_id, 'title': title, 'abstract': abstract, 'year': year, 'authors': authors, 'journal': journal, 'doi': doi})
+            results.append(Paper(title=title, abstract=abstract, authors=authors, year=year, doi=doi, journal=journal))
     return results
 
-def save_results(results: list[dict], directory: str) -> None:
+def save_results(results: list[Paper], directory: str) -> None:
     """Save results to a CSV file."""
-    df = pd.DataFrame(results, columns=['pubmed_id', 'title', 'abstract', 'year', 'authors', 'journal', 'doi'])
+    df = pd.DataFrame([paper.__dict__ for paper in results], columns=['title', 'abstract', 'authors', 'year', 'doi', 'journal'])
     df.to_csv(directory, index=False)
 
-def print_results(results: list[dict]) -> None:
+def print_results(results: list[Paper]) -> None:
     """Print results to the console."""
     for result in results:
-        print(f"PubMed ID: {result['pubmed_id']}")
-        print(f"Title: {result['title']}")
-        print(f"Abstract: {result['abstract']}")
-        print(f"Year: {result['year']}")
-        print(f"Authors: {', '.join(result['authors'])}")
-        print(f"Journal: {result['journal']}")
-        print(f"DOI: {result['doi']}")
+        print(f"Title: {result.title}")
+        print(f"Abstract: {result.abstract}")
+        print(f"Year: {result.year}")
+        print(f"Authors: {', '.join(result.authors)}")
+        print(f"Journal: {result.journal}")
+        print(f"DOI: {result.doi}")
         print()
 
 def main(query: str, max_results: int, sort_mode: str, directory: str) -> None:
